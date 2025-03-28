@@ -1,27 +1,34 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const port = 3000;  // 你可以修改端口
+const port = 3000;
 
-// 假设我们在这里获取虎牙的直播流
+// 代理获取虎牙直播流 URL
 app.get('/huya/:id', async (req, res) => {
     const roomId = req.params.id;
-    const streamUrl = await getHuyaStreamUrl(roomId);
-    if (streamUrl) {
-        res.json({ streamUrl });
-    } else {
-        res.status(404).json({ error: 'Stream not found' });
+    const apiUrl = `https://isus.cc/php/huya.php?id=${roomId}`;
+
+    try {
+        const response = await axios.get(apiUrl);
+        const streamUrl = response.data; // 假设 API 返回的是流的 URL
+
+        if (streamUrl) {
+            res.json({ streamUrl });
+        } else {
+            res.status(404).json({ error: 'Stream not found' });
+        }
+    } catch (error) {
+        console.error('Failed to fetch stream URL:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// 模拟从虎牙获取直播流的函数
-async function getHuyaStreamUrl(roomId) {
-    // 这里是模拟的例子，实际情况你需要根据房间号去抓取或访问相关API
-    // 假设我们通过API或者抓包获取的流链接
-    return `rtmp://huya.com/live/${roomId}`;
-}
+// 默认路由，查看是否能正常访问
+app.get('/', (req, res) => {
+    res.send('Welcome to the live stream proxy server! Use /huya/:id to get stream URLs.');
+});
 
 // 启动服务器
 app.listen(port, () => {
-    console.log(`代理服务器正在运行，访问地址：http://localhost:${port}`);
+    console.log(`Server is running at http://localhost:${port}`);
 });
